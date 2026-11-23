@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rota Salesforce do Douglas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ffffff'/%3E%3Cpath d='M16 48 C16 34 48 38 48 22' fill='none' stroke='%230176d3' stroke-width='5' stroke-linecap='round' stroke-dasharray='2 9'/%3E%3Ccircle cx='16' cy='48' r='6' fill='%230176d3'/%3E%3Ccircle cx='48' cy='18' r='8' fill='%23032d60'/%3E%3C/svg%3E">
+<style>
+/* Layout: coluna única de leitura; linha do tempo vertical com fases numeradas, checklists marcáveis, tabelas de referência no fim. Estilo inspirado no Lightning Design System: fundo cinza-claro, cartões brancos, azul de destaque, títulos em azul-marinho, fontes do sistema. */
+:root{
+  --bg:#f3f3f3;
+  --surface:#ffffff;
+  --ink:#181818;
+  --heading:#032d60;
+  --muted:#5c5c5c;
+  --line:#e5e5e5;
+  --accent:#0176d3;
+  --accent-soft:#eef4ff;
+  --band:#032d60;
+  --done:#2e844a;
+  --warn:#a96404;
+  --warn-soft:#fef1e6;
+  --shadow:0 2px 2px rgba(0,0,0,.10);
+  --display:-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --body:-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:Consolas, Menlo, "Courier New", monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181b; --surface:#222428; --ink:#ececec; --heading:#cfe3ff; --muted:#a8a8a8; --line:#3a3d42;
+    --accent:#4ba3f5; --accent-soft:#132c47; --band:#0b2a4f; --done:#45c65a; --warn:#f0a35e; --warn-soft:#3a2716;
+    --shadow:0 2px 2px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181b; --surface:#222428; --ink:#ececec; --heading:#cfe3ff; --muted:#a8a8a8; --line:#3a3d42;
+  --accent:#4ba3f5; --accent-soft:#132c47; --band:#0b2a4f; --done:#45c65a; --warn:#f0a35e; --warn-soft:#3a2716;
+  --shadow:0 2px 2px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.band{background:var(--band);height:120px;margin-bottom:-120px}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px 64px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.2;color:var(--heading)}
+h1{font-size:clamp(1.8rem,4.5vw,2.5rem);font-weight:700}
+h2{font-size:1.4rem;font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+p{margin:0;max-width:65ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header{display:grid;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:24px}
+.eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.goal{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:4px;padding:14px 16px;display:grid;gap:6px}
+.progress{display:grid;gap:8px}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:var(--done);transition:width .3s}
+@media (prefers-reduced-motion: reduce){.bar span{transition:none}}
+.progress-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.9rem}
+button.reset{background:var(--surface);border:1px solid var(--line);color:var(--accent);border-radius:4px;padding:4px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+button.reset:hover{background:var(--bg)}
+
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.strip a{text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:10px 12px;display:grid;gap:2px;min-width:0;border-top:3px solid var(--accent)}
+.strip a:hover{border-color:var(--accent)}
+.strip b{font-size:.92rem;color:var(--heading)}
+.strip small{color:var(--muted);font-size:.78rem}
+
+.rules{display:grid;gap:8px;padding:0;margin:0;list-style:none}
+.rules li{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:12px 16px}
+
+.phases{display:grid;gap:28px}
+.phase{display:grid;grid-template-columns:44px 1fr;gap:16px}
+.num{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--display);font-weight:700;font-size:1.15rem;display:grid;place-items:center;box-shadow:var(--shadow)}
+:root[data-theme="dark"] .num{color:#0f161d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .num{color:#0f161d}}
+.phase-body{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:20px;display:grid;gap:14px;min-width:0}
+.phase-head{display:grid;gap:4px}
+.when{font-family:var(--mono);font-size:.85rem;color:var(--accent)}
+.phase-count{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tasks li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
+.tasks input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--done);cursor:pointer}
+.tasks label{cursor:pointer}
+.tasks label small{display:block;color:var(--muted);font-size:.88rem}
+.tasks li.checked label > span{text-decoration:line-through;color:var(--muted)}
+.box{border-radius:4px;padding:12px 14px;display:grid;gap:4px;font-size:.95rem}
+.box.deliver{background:var(--accent-soft)}
+.box.gate{background:var(--warn-soft)}
+.box b{font-family:var(--display)}
+.box.gate b{color:var(--warn)}
+
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.track{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px;display:grid;gap:8px;align-content:start}
+.track ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:.95rem}
+
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:none}
+td.mono{white-space:nowrap}
+
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;padding:0;margin:0;list-style:none}
+.links li{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:2px}
+.links small{color:var(--muted)}
+section{display:grid;gap:16px}
+footer{font-size:.85rem;color:var(--muted)}
+
+/* Abas */
+.view{display:grid;gap:40px}
+.view[hidden]{display:none}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:4px}
+.tabs a{flex:1 1 180px;text-align:center;text-decoration:none;color:var(--muted);font-weight:700;font-size:.95rem;padding:10px 14px;border-radius:4px;border-bottom:3px solid transparent}
+.tabs a:hover{color:var(--accent);background:var(--bg)}
+.tabs a[aria-selected="true"]{color:var(--accent);background:var(--accent-soft);border-bottom-color:var(--accent)}
+
+/* Cronômetro */
+.timer-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:24px;display:grid;gap:18px}
+.timer-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.chip.running{background:var(--done);color:#fff}
+.clock-row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.clock{font-size:clamp(2.6rem,10vw,4.2rem);font-weight:700;color:var(--heading);line-height:1;letter-spacing:.02em}
+.sub{font-size:.82rem;color:var(--muted)}
+button.play{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#fff;border:none;border-radius:4px;padding:14px 26px;font:inherit;font-weight:700;font-size:1.05rem;cursor:pointer;box-shadow:var(--shadow);min-width:150px;justify-content:center}
+button.play:hover{filter:brightness(1.08)}
+button.play.on{background:var(--warn)}
+.daygoal{display:grid;gap:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--bg);border-radius:4px;padding:12px 14px;display:grid;gap:2px}
+.stat .val{font-size:1.3rem;font-weight:700;color:var(--heading)}
+.opts{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.opt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-size:.95rem}
+.opt input{width:18px;height:18px;accent-color:var(--accent)}
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:18px;display:grid;gap:10px;overflow-x:auto}
+.chart{position:relative;display:grid;grid-template-columns:repeat(14,minmax(28px,1fr));gap:6px;align-items:end;height:200px;min-width:460px;padding-top:18px;border-bottom:1px solid var(--line)}
+.chart .col{display:grid;grid-template-rows:auto 1fr;justify-items:center;height:100%;align-items:end;gap:4px;position:relative;z-index:1}
+.chart .bar-v{width:100%;max-width:34px;border-radius:3px 3px 0 0;background:var(--line);min-height:2px}
+.chart .bar-v.ok{background:var(--done)}
+.chart .bar-v.low{background:var(--accent)}
+.chart .lbl{font-size:.72rem;color:var(--ink);font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chart .goal-line{position:absolute;left:0;right:0;border-top:2px dashed var(--warn);z-index:2;pointer-events:none}
+.days{display:grid;grid-template-columns:repeat(14,minmax(28px,1fr));gap:6px;min-width:460px}
+.days span{text-align:center;font-size:.72rem;color:var(--muted)}
+.days span.today{color:var(--accent);font-weight:700}
+.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lg{display:inline-block;width:12px;height:12px;border-radius:2px}
+.lg.ok{background:var(--done)} .lg.low{background:var(--accent)} .lg.line{height:0;border-top:2px dashed var(--warn);width:16px}
+
+/* Métodos de estudo */
+.method{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:20px;display:grid;gap:12px}
+.method ol,.method ul{margin:0;padding-left:20px;display:grid;gap:6px;max-width:70ch}
+.mhead{display:grid;gap:6px;justify-items:start}
+.tip{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:4px;padding:10px 14px;font-size:.95rem}
+h4{margin:0 0 6px;font-size:1rem;color:var(--heading)}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+table.compact{min-width:480px}
+.cornell{display:grid;grid-template-columns:minmax(130px,32%) 1fr;grid-template-areas:"top top" "left right" "bottom bottom";border:2px solid var(--heading);border-radius:4px;background:
+  repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--line) 27px, var(--line) 28px), var(--surface);font-size:.92rem}
+.cornell p{margin:0 0 8px}
+.c-top{grid-area:top;padding:10px 14px;border-bottom:2px solid var(--heading)}
+.c-left{grid-area:left;padding:10px 14px;border-right:2px solid var(--warn);color:var(--heading);font-weight:600}
+.c-right{grid-area:right;padding:10px 14px}
+.c-bottom{grid-area:bottom;padding:10px 14px;border-top:2px solid var(--heading);background:var(--accent-soft)}
+.c-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin-bottom:6px}
+@media (max-width:480px){ .cornell{grid-template-columns:1fr;grid-template-areas:"top" "left" "right" "bottom"} .c-left{border-right:none;border-bottom:2px dashed var(--warn)} }
+
+/* LinkedIn */
+.plain-head{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:24px;display:grid;gap:14px}
+.when-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.when-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px;display:grid;gap:8px;align-content:start;justify-items:start}
+.when-card.key{border:2px solid var(--accent)}
+.example{background:var(--bg);border-left:4px solid var(--heading);border-radius:4px;padding:10px 14px;display:grid;gap:6px}
+.example p{margin:0}
+.skills{display:flex;flex-wrap:wrap;gap:6px}
+.skills span{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:3px 10px;font-size:.85rem;font-weight:600}
+ol.rank{display:grid;gap:4px}
+
+/* Metas */
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.goal-card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px;display:grid;gap:10px;align-content:start}
+.goal-card .sub{font-size:.82rem;color:var(--muted)}
+.chip{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.chip.now{background:var(--accent);color:#fff}
+.months{display:grid;gap:18px}
+.year{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:10px}
+.year-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.month-list{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.month-list li{display:grid;grid-template-columns:22px 64px 1fr;gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.month-list li:first-child{border-top:none}
+.month-list li.current{background:var(--accent-soft);margin:0 -10px;padding:8px 10px;border-radius:4px}
+.month-list input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--done);cursor:pointer}
+.month-list .m{font-family:var(--mono);font-size:.85rem;color:var(--accent);padding-top:1px}
+.month-list li.checked label > span{text-decoration:line-through;color:var(--muted)}
+
+/* Parabéns */
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,24px) scale(.96);opacity:0;z-index:50;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-left:5px solid var(--done);border-radius:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);padding:14px 18px;display:flex;gap:14px;align-items:center;max-width:min(440px,calc(100% - 32px));
+  transition:opacity .25s, transform .3s cubic-bezier(.2,1.4,.4,1)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.toast.big{border-left-color:var(--accent)}
+.toast svg{flex:0 0 auto}
+.toast .t1{font-weight:700;color:var(--heading)}
+.toast .t2{font-size:.9rem;color:var(--muted)}
+.check-circle{stroke:var(--done);stroke-dasharray:132;stroke-dashoffset:132}
+.check-mark{stroke:var(--done);stroke-dasharray:40;stroke-dashoffset:40}
+.toast.big .check-circle,.toast.big .check-mark{stroke:var(--accent)}
+.toast.show .check-circle{animation:draw .5s ease-out forwards}
+.toast.show .check-mark{animation:draw .35s .4s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion: reduce){
+  .toast{transition:opacity .2s}
+  .toast.show .check-circle,.toast.show .check-mark{animation:none;stroke-dashoffset:0}
+}
+@media (max-width:480px){
+  .phase{grid-template-columns:1fr}
+  .num{width:36px;height:36px;font-size:1rem}
+}
+</style>
+</head>
+<body>
+<div class="band" aria-hidden="true"></div>
+<div class="wrap">
+<nav class="tabs" role="tablist" aria-label="Seções da página">
+  <a href="#rota" role="tab" id="tab-rota" aria-controls="view-rota">Rota de estudos</a>
+  <a href="#estudo" role="tab" id="tab-estudo" aria-controls="view-estudo">Como estudar + cronômetro</a>
+  <a href="#linkedin" role="tab" id="tab-linkedin" aria-controls="view-linkedin">LinkedIn e candidaturas</a>
+</nav>
+<div class="view" id="view-rota" role="tabpanel" aria-labelledby="tab-rota">
+
+<header>
+  <div class="eyebrow">Plano de carreira · nov/2026 → 2030</div>
+  <h1>Rota Salesforce do Douglas</h1>
+  <div class="goal">
+    <b>Objetivo final</b>
+    <p>Até 2030: profissional Salesforce pleno forte ou sênior, trabalhando para empresa dos EUA, Canadá, Europa, Austrália ou Nova Zelândia (remoto ou presencial), ganhando em dólar ou euro, com a credencial Application Architect.</p>
+    <p class="muted">Estratégia: Admin + Agentforce como base, programação cedo, projetos reais desde o início e inglês todos os dias. Não ser "mais um admin certificado".</p>
+  </div>
+  <div class="progress">
+    <div class="progress-row"><span>Progresso geral: <b id="pct" class="mono">0%</b> <span class="muted" id="count"></span></span><button class="reset" id="reset" type="button">Desmarcar tudo</button></div>
+    <div class="bar"><span id="barfill"></span></div>
+    <small class="muted">Marque as tarefas conforme concluir. O progresso fica salvo neste navegador.</small>
+  </div>
+</header>
+
+<section aria-labelledby="mapa">
+  <h2 id="mapa">Mapa da rota</h2>
+  <nav class="strip" aria-label="Fases">
+    <a href="#fase-1"><b>1 · Fundação</b><small>nov–dez/26</small></a>
+    <a href="#fase-2"><b>2 · Prova Admin</b><small>jan–fev/27</small></a>
+    <a href="#fase-3"><b>3 · Diferenciação</b><small>mar–jun/27</small></a>
+    <a href="#fase-4"><b>4 · 1ª vaga</b><small>jul–dez/27</small></a>
+    <a href="#fase-5"><b>5 · Developer</b><small>2028</small></a>
+    <a href="#fase-6"><b>6 · Exterior</b><small>2029</small></a>
+    <a href="#fase-7"><b>7 · Arquitetura</b><small>2030+</small></a>
+  </nav>
+</section>
+
+<section aria-labelledby="regras">
+  <h2 id="regras">5 regras da rota</h2>
+  <ul class="rules">
+    <li><b>Uma coisa de cada vez.</b> Nada de FIAP, TryHackMe e Trailhead ao mesmo tempo. O foco agora é Salesforce.</li>
+    <li><b>Prática vale mais que vídeo.</b> Todo módulo com exercício prático é feito no Playground, nunca pulado.</li>
+    <li><b>Certificação sozinha não dá vaga.</b> Cada fase termina com algo que dá para mostrar: certificação, projeto ou post.</li>
+    <li><b>Agentforce desde o começo.</b> É a etapa em que muitos candidatos estão sendo eliminados nos processos seletivos.</li>
+    <li><b>Inglês todo dia, sem exceção.</b> Sem inglês não existe vaga em dólar ou euro.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="fases">
+  <h2 id="fases">Fases e tarefas</h2>
+  <div class="phases">
+
+    <article class="phase" id="fase-1">
+      <div class="num">1</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">23/nov – 31/dez/2026 · cerca de 5 semanas</div>
+          <h3>Fundação: conhecer a plataforma</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t1-1"><label for="t1-1"><span>Entrar no Trailhead logado e conferir o nome "Douglas Soares" no perfil</span><small>O nome precisa ser igual ao do documento para o dia da prova.</small></label></li>
+          <li><input type="checkbox" id="t1-2"><label for="t1-2"><span>Iniciar a trilha <a href="https://trailhead.salesforce.com/content/learn/trails/force_com_admin_beginner">Admin Beginner</a></span><small>Comece pelo módulo "Salesforce Platform Basics".</small></label></li>
+          <li><input type="checkbox" id="t1-3"><label for="t1-3"><span>Criar o Trailhead Playground no primeiro exercício prático</span><small>É o seu Salesforce de treino, onde nada quebra de verdade.</small></label></li>
+          <li><input type="checkbox" id="t1-4"><label for="t1-4"><span>Terminar a Admin Beginner até 15/dez</span><small>Ritmo: 1 hora por dia, pelo menos 5 dias por semana.</small></label></li>
+          <li><input type="checkbox" id="t1-5"><label for="t1-5"><span>Montar um glossário próprio (termo, significado, exemplo)</span><small>Object, Field, Record, Profile, Permission Set, Flow, Report, Dashboard...</small></label></li>
+          <li><input type="checkbox" id="t1-6"><label for="t1-6"><span>Começar o hábito de inglês: 30 minutos por dia</span><small>Ver a trilha paralela de inglês mais abaixo.</small></label></li>
+          <li><input type="checkbox" id="t1-7"><label for="t1-7"><span>Iniciar a trilha <a href="https://trailhead.salesforce.com/content/learn/trails/force_com_admin_intermediate">Admin Intermediate</a> na segunda quinzena de dezembro</span></label></li>
+        </ul>
+        <div class="box gate"><b>Ponto de decisão · 21/dez</b><p>Você gostou de mexer no Playground? Teve vontade de abrir no dia seguinte? Se sim, siga em frente. Se foi um sofrimento, pare aqui: você não gastou nada.</p></div>
+        <div class="box deliver"><b>Entregável</b><p>Admin Beginner concluída e o glossário com mais de 40 termos.</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-2">
+      <div class="num">2</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">jan – fev/2027 · cerca de 8 semanas</div>
+          <h3>Certificação Platform Administrator</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t2-1"><label for="t2-1"><span>Concluir a Admin Intermediate, com atenção especial a Flow</span><small>Flow é a parte de "construir" do Admin, a que mais combina com você.</small></label></li>
+          <li><input type="checkbox" id="t2-2"><label for="t2-2"><span>Fazer o trailmix oficial "Prepare for Your Salesforce Platform Administrator Credential"</span><small>Fica na <a href="https://trailhead.salesforce.com/en/credentials/administratoroverview">página da certificação</a>. Segue os tópicos da prova, incluindo Agentforce (8% da prova).</small></label></li>
+          <li><input type="checkbox" id="t2-3"><label for="t2-3"><span>Fazer as primeiras trilhas de Agentforce em paralelo</span><small>No Trailhead: Learn → Trails → buscar "Agentforce". Monte pelo menos um agente simples no Playground.</small></label></li>
+          <li><input type="checkbox" id="t2-4"><label for="t2-4"><span>Assistir a um webinar gratuito de preparação da Salesforce</span></label></li>
+          <li><input type="checkbox" id="t2-5"><label for="t2-5"><span>Comprar os simulados do <a href="https://focusonforce.com/">Focus on Force</a> (cerca de US$ 20–30)</span></label></li>
+          <li><input type="checkbox" id="t2-6"><label for="t2-6"><span>Atingir 80% ou mais em 3 simulados seguidos</span><small>A nota mínima da prova é 65%, mas os simulados costumam ser mais fáceis que a prova real.</small></label></li>
+          <li><input type="checkbox" id="t2-7"><label for="t2-7"><span>Agendar e fazer a prova Platform Administrator até o fim de fevereiro</span><small>US$ 200 (refazer custa US$ 100). Confira se há opção em português.</small></label></li>
+          <li><input type="checkbox" id="t2-8"><label for="t2-8"><span>Atualizar o LinkedIn: título, sobre e certificação</span><small>Posicionamento: "Salesforce Admin com experiência em funil B2B e agentes de IA".</small></label></li>
+        </ul>
+        <div class="box deliver"><b>Entregável</b><p>Certificação Platform Administrator e um post no LinkedIn contando o que aprendeu (gera visibilidade com recrutadores).</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-3">
+      <div class="num">3</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">mar – jun/2027 · cerca de 16 semanas</div>
+          <h3>Diferenciação e candidaturas</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t3-1"><label for="t3-1"><span>Certificação Agentforce Specialist (até abril)</span><small>É a etapa em que candidatos de bootcamp estão sendo eliminados.</small></label></li>
+          <li><input type="checkbox" id="t3-2"><label for="t3-2"><span>Projeto de portfólio 1: pipeline de vendas B2B</span><small>Objetos personalizados, processo de vendas, Flow de qualificação de leads, relatórios e dashboard. Documentar com prints: problema, solução e resultado.</small></label></li>
+          <li><input type="checkbox" id="t3-3"><label for="t3-3"><span>Projeto de portfólio 2: agente Agentforce resolvendo um caso real</span><small>Ex.: atendimento que consulta pedidos ou qualifica leads. Gravar um vídeo curto do agente funcionando.</small></label></li>
+          <li><input type="checkbox" id="t3-4"><label for="t3-4"><span>Certificação Platform App Builder (até junho)</span><small>A ponte entre o Admin e o Developer: construir apps sem código.</small></label></li>
+          <li><input type="checkbox" id="t3-5"><label for="t3-5"><span>Começar lógica de programação e JavaScript</span><small><a href="https://cs50.harvard.edu/x/">CS50</a> (semanas 0 a 2) e <a href="https://pt.javascript.info/">pt.javascript.info</a> (parte 1). Base para o Apex e o LWC depois.</small></label></li>
+          <li><input type="checkbox" id="t3-6"><label for="t3-6"><span>Entrar em um Trailblazer Community Group de São Paulo ou região</span><small>Ir a pelo menos 1 evento por mês. Muita vaga circula ali antes de ser publicada.</small></label></li>
+          <li><input type="checkbox" id="t3-7"><label for="t3-7"><span>Seguir no LinkedIn as consultorias parceiras da Salesforce e acompanhar os bootcamps</span><small>Buscar "bootcamp Salesforce" e "programa de formação Salesforce".</small></label></li>
+          <li><input type="checkbox" id="t3-8"><label for="t3-8"><span>Candidatar-se a 10 vagas por semana</span><small>Admin júnior, consultor júnior, analista Salesforce, além dos bootcamps.</small></label></li>
+        </ul>
+        <div class="box gate"><b>Ponto de decisão · 30/jun</b><p>Se não houver nenhuma entrevista depois de cerca de 100 candidaturas, o problema está no currículo ou no portfólio, não no mercado. Revise os dois antes de continuar.</p></div>
+        <div class="box deliver"><b>Entregável</b><p>3 certificações (Admin, Agentforce Specialist, App Builder), 2 projetos publicados e processos seletivos em andamento.</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-4">
+      <div class="num">4</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">jul – dez/2027</div>
+          <h3>Primeira experiência profissional</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t4-1"><label for="t4-1"><span>Estar atuando como admin, consultor júnior ou em bootcamp de consultoria</span><small>Se ainda não houver vaga: projetos freelance ou voluntariado em ONG (a Salesforce oferece licenças para ONGs).</small></label></li>
+          <li><input type="checkbox" id="t4-2"><label for="t4-2"><span>Trilha <a href="https://trailhead.salesforce.com/content/learn/trails/force_com_dev_beginner">Developer Beginner</a>: primeiros passos em Apex</span><small>O Apex é parecido com Java. Comece pelo básico: variáveis, classes, SOQL e triggers.</small></label></li>
+          <li><input type="checkbox" id="t4-3"><label for="t4-3"><span>JavaScript intermediário (pt.javascript.info, parte 1 completa)</span></label></li>
+          <li><input type="checkbox" id="t4-4"><label for="t4-4"><span>Inglês: começar conversação semanal (aula, tandem ou grupo)</span></label></li>
+          <li><input type="checkbox" id="t4-5"><label for="t4-5"><span>Registrar cada entrega do trabalho num documento de conquistas</span><small>Problema, o que você fez e o resultado em números. Vai virar currículo e respostas de entrevista.</small></label></li>
+        </ul>
+        <div class="box deliver"><b>Entregável</b><p>6 meses de experiência real e o primeiro código Apex funcionando no Playground.</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-5">
+      <div class="num">5</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">2028</div>
+          <h3>Developer: o perfil híbrido</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t5-1"><label for="t5-1"><span>Trilhas Developer Intermediate e Lightning Web Components (LWC)</span></label></li>
+          <li><input type="checkbox" id="t5-2"><label for="t5-2"><span>Certificação Platform Developer</span><small>Ela cobra bastante da parte sem código. A base de Admin conta aqui.</small></label></li>
+          <li><input type="checkbox" id="t5-3"><label for="t5-3"><span>Migrar para dev júnior ou para um cargo híbrido de admin e dev</span><small>Perfil mais difícil de encontrar: configura, programa e entende de negócio.</small></label></li>
+          <li><input type="checkbox" id="t5-4"><label for="t5-4"><span>Projeto de portfólio 3: integração com uma API externa usando Apex e LWC</span><small>Publicar no GitHub com README em inglês.</small></label></li>
+          <li><input type="checkbox" id="t5-5"><label for="t5-5"><span>Inglês B2: fazer o <a href="https://www.efset.org/">EF SET</a> gratuito para medir</span></label></li>
+          <li><input type="checkbox" id="t5-6"><label for="t5-6"><span>LinkedIn e currículo totalmente em inglês</span></label></li>
+        </ul>
+        <div class="box deliver"><b>Entregável</b><p>4 certificações, experiência como dev e inglês B2 comprovado.</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-6">
+      <div class="num">6</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">2029</div>
+          <h3>Pleno e primeira vaga no exterior</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t6-1"><label for="t6-1"><span>Atuar como developer pleno</span></label></li>
+          <li><input type="checkbox" id="t6-2"><label for="t6-2"><span>Candidatar-se a vagas remotas de empresas estrangeiras que contratam na América Latina</span><small>O mais comum é a contratação como PJ, trabalhando do Brasil. Filtre no LinkedIn por "Remote" e "LATAM".</small></label></li>
+          <li><input type="checkbox" id="t6-3"><label for="t6-3"><span>Fazer entrevistas técnicas em inglês (treinar com simulações antes)</span></label></li>
+          <li><input type="checkbox" id="t6-4"><label for="t6-4"><span>Estudar para Data Architect</span></label></li>
+          <li><input type="checkbox" id="t6-5"><label for="t6-5"><span>Revisar o caminho presencial: cidadania portuguesa ou visto (diploma e pontos)</span><small>Para morar fora, o bacharelado pesa nos vistos de Canadá, Austrália e Nova Zelândia.</small></label></li>
+        </ul>
+        <div class="box deliver"><b>Entregável</b><p>Primeiro contrato em dólar ou euro.</p></div>
+      </div>
+    </article>
+
+    <article class="phase" id="fase-7">
+      <div class="num">7</div>
+      <div class="phase-body">
+        <div class="phase-head">
+          <div class="when">2030 em diante</div>
+          <h3>Arquitetura</h3>
+          <div class="phase-count" data-count></div>
+        </div>
+        <ul class="tasks">
+          <li><input type="checkbox" id="t7-1"><label for="t7-1"><span>Certificação Data Architect</span></label></li>
+          <li><input type="checkbox" id="t7-2"><label for="t7-2"><span>Certificação Sharing and Visibility Architect</span></label></li>
+          <li><input type="checkbox" id="t7-3"><label for="t7-3"><span>Receber a credencial Application Architect</span><small>Concedida automaticamente com App Builder + Platform Developer + Data Architect + Sharing and Visibility Architect.</small></label></li>
+          <li><input type="checkbox" id="t7-4"><label for="t7-4"><span>Pleno forte ou sênior em empresa estrangeira</span></label></li>
+          <li><input type="checkbox" id="t7-5"><label for="t7-5"><span>Mirar cargos de Solution Architect ou Technical Architect (2032+)</span><small>São os cargos em que a demanda mais cresce, mas que normalmente exigem de 8 a 10 anos de experiência.</small></label></li>
+        </ul>
+        <div class="box deliver"><b>Entregável</b><p>Application Architect e uma carreira internacional consolidada.</p></div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section aria-labelledby="paralelas">
+  <h2 id="paralelas">Trilhas paralelas (o ano todo)</h2>
+  <div class="tracks">
+    <div class="track">
+      <h3>Inglês</h3>
+      <ul>
+        <li>Fazer o Trailhead em inglês sempre que possível.</li>
+        <li>Usar o tradutor do Chrome só para entender, não para ler tudo.</li>
+        <li>Anotar no glossário os termos técnicos em inglês.</li>
+        <li>Meta: B2 até o fim de 2028.</li>
+      </ul>
+    </div>
+    <div class="track">
+      <h3>Portfólio</h3>
+      <ul>
+        <li>Todo projeto documentado com problema, solução e resultado.</li>
+        <li>Prints e vídeos curtos do Playground.</li>
+        <li>1 post no LinkedIn por mês sobre o que construiu.</li>
+      </ul>
+    </div>
+    <div class="track">
+      <h3>Networking</h3>
+      <ul>
+        <li>Trailblazer Community Group: 1 evento por mês.</li>
+        <li>Comentar posts de profissionais Salesforce no LinkedIn.</li>
+        <li>Pedir conversa de 15 minutos a quem já está onde você quer chegar.</li>
+      </ul>
+    </div>
+    <div class="track">
+      <h3>Agentforce e IA</h3>
+      <ul>
+        <li>1 módulo novo de Agentforce por mês, mesmo depois da certificação.</li>
+        <li>Acompanhar as novidades a cada release da Salesforce (3 por ano).</li>
+        <li>Usar a sua experiência com agentes como diferencial.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="rotina">
+  <h2 id="rotina">Rotina semanal (fases 1 a 3)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Dia</th><th>Salesforce (1 h)</th><th>Inglês (30 min)</th></tr></thead>
+      <tbody>
+        <tr><td>Segunda</td><td>Módulo novo do Trailhead</td><td>Vídeo ou podcast técnico</td></tr>
+        <tr><td>Terça</td><td>Módulo novo + exercício prático</td><td>Vocabulário do glossário</td></tr>
+        <tr><td>Quarta</td><td>Exercício prático no Playground</td><td>Leitura (documentação ou SF Ben)</td></tr>
+        <tr><td>Quinta</td><td>Módulo novo do Trailhead</td><td>Vídeo ou podcast técnico</td></tr>
+        <tr><td>Sexta</td><td>Revisão da semana + projeto de portfólio</td><td>Escrever um resumo curto em inglês</td></tr>
+        <tr><td>Sábado</td><td>Opcional: projeto ou simulado</td><td>Opcional: conversação</td></tr>
+        <tr><td>Domingo</td><td>Descanso</td><td>Descanso</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="provas">
+  <h2 id="provas">Calendário de certificações</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Certificação</th><th>Quando</th><th>Custo aprox.</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>Platform Administrator</td><td class="mono">fev/2027</td><td class="mono">US$ 200</td><td>60 questões, 105 min, mínimo 65%. Refazer: US$ 100.</td></tr>
+        <tr><td>Agentforce Specialist</td><td class="mono">abr/2027</td><td>Ver no Trailhead</td><td>O filtro dos processos seletivos atuais.</td></tr>
+        <tr><td>Platform App Builder</td><td class="mono">jun/2027</td><td class="mono">US$ 200</td><td>Construir apps sem código.</td></tr>
+        <tr><td>Platform Developer</td><td class="mono">2028</td><td class="mono">US$ 200</td><td>Apex, LWC e muita base sem código.</td></tr>
+        <tr><td>Data Architect</td><td class="mono">2029–30</td><td class="mono">~US$ 400</td><td>Categoria Architect.</td></tr>
+        <tr><td>Sharing and Visibility Architect</td><td class="mono">2030</td><td class="mono">~US$ 400</td><td>Fecha a credencial Application Architect.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Nomes e preços mudam com frequência. Confira sempre na página oficial antes de agendar.</p>
+</section>
+
+<section aria-labelledby="recursos">
+  <h2 id="recursos">Recursos</h2>
+  <ul class="links">
+    <li><a href="https://trailhead.salesforce.com/">Trailhead</a><small>Estudo oficial e gratuito, com o Playground.</small></li>
+    <li><a href="https://trailhead.salesforce.com/en/credentials/administratoroverview">Certificações de Admin</a><small>Guias de prova e trailmixes de preparação.</small></li>
+    <li><a href="https://focusonforce.com/">Focus on Force</a><small>Simulados de referência na comunidade.</small></li>
+    <li><a href="https://www.salesforceben.com/">Salesforce Ben</a><small>Notícias e tendências do mercado (em inglês).</small></li>
+    <li><a href="https://cs50.harvard.edu/x/">CS50 de Harvard</a><small>Lógica de programação gratuita.</small></li>
+    <li><a href="https://pt.javascript.info/">JavaScript.info em português</a><small>JavaScript do básico ao intermediário.</small></li>
+    <li><a href="https://www.efset.org/">EF SET</a><small>Teste gratuito de nível de inglês.</small></li>
+  </ul>
+</section>
+
+<section aria-labelledby="metas">
+  <h2 id="metas">Metas diárias, semanais e mensais</h2>
+  <p class="muted">As metas diárias desmarcam sozinhas a cada novo dia, e as semanais a cada segunda-feira. As mensais ficam marcadas até o fim do projeto.</p>
+
+  <div class="goals-grid">
+    <div class="goal-card">
+      <div><span class="chip">Todo dia</span></div>
+      <h3>Metas diárias</h3>
+      <div class="sub" id="daily-status"></div>
+      <ul class="tasks" id="daily">
+        <li><input type="checkbox" id="d-1"><label for="d-1"><span>1 hora de Salesforce</span><small>Trailhead, Playground ou projeto. De segunda a sexta, no mínimo.</small></label></li>
+        <li><input type="checkbox" id="d-2"><label for="d-2"><span>30 minutos de inglês</span></label></li>
+        <li><input type="checkbox" id="d-3"><label for="d-3"><span>Anotar pelo menos 1 termo novo no glossário</span></label></li>
+        <li><input type="checkbox" id="d-4"><label for="d-4"><span>Revisar em 5 minutos o que estudou ontem</span><small>Revisar ajuda a fixar o conteúdo e custa pouco tempo.</small></label></li>
+      </ul>
+    </div>
+
+    <div class="goal-card">
+      <div><span class="chip">Toda semana</span></div>
+      <h3>Metas semanais</h3>
+      <div class="sub" id="weekly-status"></div>
+      <ul class="tasks" id="weekly">
+        <li><input type="checkbox" id="w-1"><label for="w-1"><span>Estudar Salesforce em pelo menos 5 dias</span></label></li>
+        <li><input type="checkbox" id="w-2"><label for="w-2"><span>Concluir de 4 a 6 módulos ou unidades práticas</span><small>Até fev/2027. Depois, avance no projeto ou no conteúdo da fase atual.</small></label></li>
+        <li><input type="checkbox" id="w-3"><label for="w-3"><span>Uma sessão prática mais longa no Playground (sábado)</span></label></li>
+        <li><input type="checkbox" id="w-4"><label for="w-4"><span>Revisão de sexta + resumo curto em inglês</span></label></li>
+        <li><input type="checkbox" id="w-5"><label for="w-5"><span>Atualizar as tarefas marcadas nesta página</span></label></li>
+        <li><input type="checkbox" id="w-6"><label for="w-6"><span>A partir de mar/2027: 10 candidaturas</span><small>Admin, consultor júnior e bootcamps de consultoria.</small></label></li>
+        <li><input type="checkbox" id="w-7"><label for="w-7"><span>A partir de mar/2027: 2 interações de networking</span><small>Comentar posts, mandar mensagem ou participar de um evento.</small></label></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Metas mensais até dez/2030</h3>
+  <div class="sub muted" id="monthly-status"></div>
+  <div class="months" id="months"></div>
+</section>
+
+<footer>Plano criado em 23/11/2026. Revise a cada fim de fase: o mercado muda, e o plano muda junto.</footer>
+</div>
+
+<div class="view" id="view-estudo" role="tabpanel" aria-labelledby="tab-estudo" hidden>
+
+<section class="timer-card" aria-labelledby="crono">
+  <div class="timer-top">
+    <div>
+      <div class="eyebrow">Cronômetro de estudo</div>
+      <h1 id="crono">Horas estudadas</h1>
+    </div>
+    <span class="chip" id="run-chip">Pausado</span>
+  </div>
+  <div class="clock-row">
+    <div>
+      <div class="sub">Hoje</div>
+      <div class="clock mono" id="clock-today">00:00:00</div>
+    </div>
+    <button type="button" class="play" id="play" aria-pressed="false">
+      <svg id="ico-play" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>
+      <svg id="ico-pause" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/></svg>
+      <span id="play-label">Play</span>
+    </button>
+  </div>
+  <div class="daygoal">
+    <div class="progress-row"><span>Meta do dia: 1 hora</span><b class="mono" id="goal-pct">0%</b></div>
+    <div class="bar"><span id="goal-fill"></span></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="sub">Esta semana</div><div class="val mono" id="s-week">0h 00min</div></div>
+    <div class="stat"><div class="sub">Este mês</div><div class="val mono" id="s-month">0h 00min</div></div>
+    <div class="stat"><div class="sub">Total</div><div class="val mono" id="s-total">0h 00min</div></div>
+    <div class="stat"><div class="sub">Dias seguidos com 1 h ou mais</div><div class="val mono" id="s-streak">0</div></div>
+  </div>
+  <div class="opts">
+    <label class="opt"><input type="checkbox" id="pomo"> Aviso Pomodoro a cada 25 minutos de estudo</label>
+    <button type="button" class="reset" id="timer-reset">Zerar cronômetro</button>
+  </div>
+  <p class="sub">O cronômetro continua contando mesmo se você fechar a página. Lembre de dar pause quando parar de estudar. O registro fica salvo neste navegador.</p>
+</section>
+
+<section aria-labelledby="hist">
+  <h2 id="hist">Últimos 14 dias</h2>
+  <div class="chart-card">
+    <div class="chart" id="chart" role="img" aria-label="Horas estudadas por dia nos últimos 14 dias"></div>
+    <div class="legend sub"><span class="lg ok"></span> 1 h ou mais <span class="lg low"></span> abaixo da meta <span class="lg line"></span> linha da meta (1 h)</div>
+  </div>
+</section>
+
+<section aria-labelledby="como">
+  <h2 id="como">Como estudar do jeito certo</h2>
+  <p>A maioria das pessoas estuda de forma passiva: assiste, lê, grifa e sente que aprendeu. O que fixa o conteúdo de verdade é estudo ativo, ou seja, tentar lembrar, explicar e fazer. As técnicas abaixo seguem essa lógica.</p>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Foco</span><h3>1. Técnica Pomodoro</h3></div>
+    <p>Você divide o estudo em blocos de foco total, separados por pausas curtas.</p>
+    <ol>
+      <li>Defina uma tarefa específica, como "concluir a unidade sobre Objects".</li>
+      <li>Estude <b>25 minutos</b> sem nenhuma interrupção. Celular em outro cômodo e notificações desligadas.</li>
+      <li>Faça uma pausa de <b>5 minutos</b> longe da tela: levante, beba água, alongue.</li>
+      <li>A cada 4 blocos, faça uma pausa maior, de <b>15 a 30 minutos</b>.</li>
+    </ol>
+    <div class="tip"><b>No seu caso:</b> a 1 hora diária equivale a 2 pomodoros. Se perceber que 25 minutos é pouco para entrar no ritmo, teste blocos de 50 minutos com 10 de pausa. Ative o aviso no cronômetro acima.</div>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Memória</span><h3>2. Recordação ativa</h3></div>
+    <p>Depois de estudar um tema, feche o material e tente escrever no caderno tudo o que lembra. Só depois abra e confira o que faltou. Esse esforço de puxar a informação da memória é o que mais fixa o conteúdo.</p>
+    <ul>
+      <li>No fim de cada unidade do Trailhead, feche a aba e escreva 3 a 5 pontos principais de memória.</li>
+      <li>Faça os quizzes antes de reler o conteúdo, não depois.</li>
+      <li>Transforme os títulos das suas anotações em perguntas, como "Qual a diferença entre Profile e Permission Set?".</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Memória</span><h3>3. Revisão espaçada</h3></div>
+    <p>Esquecemos rápido o que não revisamos. Revisar em intervalos crescentes faz o conteúdo ir para a memória de longo prazo com menos esforço.</p>
+    <div class="table-wrap">
+      <table class="compact">
+        <thead><tr><th>Quando revisar</th><th>Como</th><th>Tempo</th></tr></thead>
+        <tbody>
+          <tr><td>No dia seguinte</td><td>Ler as perguntas da coluna da esquerda e responder de memória</td><td class="mono">5 min</td></tr>
+          <tr><td>Depois de 3 dias</td><td>Responder de memória e só então conferir</td><td class="mono">5 min</td></tr>
+          <tr><td>Depois de 7 dias</td><td>Revisão de sexta: reler o resumo da semana</td><td class="mono">15 min</td></tr>
+          <tr><td>Depois de 30 dias</td><td>Revisão do mês pelos resumos de rodapé</td><td class="mono">30 min</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip"><b>Dica:</b> marque no canto da página do caderno os dias em que revisou, por exemplo "R1 · R3 · R7 · R30". Para a prova de Admin, os simulados funcionam como uma grande revisão espaçada.</div>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Entendimento</span><h3>4. Técnica de Feynman</h3></div>
+    <p>Se você não consegue explicar algo de forma simples, ainda não entendeu.</p>
+    <ol>
+      <li>Escolha um conceito, por exemplo "Flow".</li>
+      <li>Explique por escrito como se fosse para alguém que nunca usou o Salesforce, sem termos técnicos.</li>
+      <li>Onde travar ou precisar de jargão, volte ao material.</li>
+      <li>Simplifique a explicação e use uma comparação do dia a dia.</li>
+    </ol>
+    <div class="tip"><b>Bônus:</b> essas explicações viram posts de LinkedIn e respostas de entrevista.</div>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Prática</span><h3>5. Aprender fazendo</h3></div>
+    <p>No Salesforce, ler sem praticar não funciona. A prova e as entrevistas cobram situações reais, não definições.</p>
+    <ul>
+      <li>Para cada conceito lido, faça a mesma coisa no Playground: crie o campo, monte o Flow, gere o relatório.</li>
+      <li>Quebre algo de propósito e tente consertar. Erros ensinam mais que acertos.</li>
+      <li>Invente um mini-cenário de negócio, como "uma empresa de descartáveis quer qualificar leads por região", e resolva no Playground.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Caderno</span><h3>6. Como anotar no caderno: método Cornell</h3></div>
+    <p>O método Cornell divide cada página em três áreas. Ele já transforma a anotação em material de revisão, porque você estuda, pergunta e resume na mesma página.</p>
+    <div class="cornell" aria-label="Exemplo de página no método Cornell">
+      <div class="c-top"><b>Tema:</b> Profiles e Permission Sets <span class="sub">· 05/12/2026 · Admin Beginner</span></div>
+      <div class="c-left">
+        <div class="c-label">Perguntas e palavras-chave</div>
+        <p>O que é um Profile?</p>
+        <p>Um usuário pode ter mais de um Profile?</p>
+        <p>Para que serve um Permission Set?</p>
+        <p>Quando usar cada um?</p>
+      </div>
+      <div class="c-right">
+        <div class="c-label">Anotações (durante o estudo)</div>
+        <p>Profile = permissões básicas do usuário. Todo usuário tem exatamente 1.</p>
+        <p>Permission Set = permissões extras, somadas ao Profile. O usuário pode ter vários.</p>
+        <p>Regra prática: Profile para o mínimo comum, Permission Set para exceções.</p>
+        <p class="sub">Exemplo: vendedor (Profile) + acesso a relatórios financeiros (Permission Set).</p>
+      </div>
+      <div class="c-bottom">
+        <div class="c-label">Resumo (com as suas palavras, depois de estudar)</div>
+        <p>O Profile define a base do usuário e é único. Os Permission Sets adicionam acessos sem precisar criar um novo Profile.</p>
+      </div>
+    </div>
+    <ol>
+      <li><b>Antes de estudar:</b> trace uma linha vertical a cerca de 6 cm da margem esquerda e uma horizontal a 5 cm do fim da página. No topo, escreva o tema, a data e a trilha.</li>
+      <li><b>Durante:</b> anote na coluna da direita. Frases curtas, setas e abreviações. Não copie o texto do Trailhead.</li>
+      <li><b>Logo depois:</b> na coluna da esquerda, escreva perguntas cujas respostas estão à direita.</li>
+      <li><b>No fim:</b> escreva o resumo no rodapé, com as suas palavras e sem olhar.</li>
+      <li><b>Para revisar:</b> cubra a coluna da direita e responda às perguntas da esquerda em voz alta.</li>
+    </ol>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Caderno</span><h3>7. Organização do caderno</h3></div>
+    <ul>
+      <li><b>Primeiras 2 páginas:</b> índice, com tema e número da página. Numere todas as páginas.</li>
+      <li><b>Últimas 10 páginas:</b> o glossário, em ordem alfabética, com termo, significado e exemplo.</li>
+      <li><b>Uma página por tema,</b> mesmo que sobre espaço. Assim fica fácil de achar e revisar.</li>
+      <li><b>Código de cores simples:</b> no máximo 3 cores. Por exemplo, azul para conceito, vermelho para pegadinha de prova e verde para exemplo prático.</li>
+      <li><b>Desenhe, não só escreva:</b> relacionamentos entre objetos como caixas e setas, e Flows como fluxogramas. Desenhar também ajuda a fixar.</li>
+      <li><b>Página de "erros":</b> toda questão de simulado que você errar vai para uma lista com o motivo do erro. É a melhor revisão antes da prova.</li>
+      <li><b>Resumo semanal</b> na sexta: meia página com o que aprendeu na semana. Em inglês, para treinar.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Hábitos</span><h3>8. O que evitar e o que ajuda</h3></div>
+    <div class="two-col">
+      <div>
+        <h4>Evite</h4>
+        <ul>
+          <li>Reler e grifar sem testar a memória. Dá a sensação de aprender, mas fixa pouco.</li>
+          <li>Assistir vídeos em velocidade 2x sem praticar depois.</li>
+          <li>Estudar com o celular por perto, mesmo em silêncio.</li>
+          <li>Maratonar 5 horas no domingo e ficar a semana parado.</li>
+          <li>Pular os exercícios práticos do Trailhead.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Faça</h4>
+        <ul>
+          <li>Estudar no mesmo horário e lugar todo dia. O hábito reduz a força de vontade necessária.</li>
+          <li>Dormir bem. É durante o sono que o cérebro fixa o que você estudou.</li>
+          <li>Começar a sessão pela revisão de 5 minutos do dia anterior.</li>
+          <li>Terminar cada sessão anotando o que fará na próxima. Assim você não perde tempo decidindo.</li>
+          <li>Registrar as horas no cronômetro acima e conferir a semana toda sexta.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="sessao">
+  <h2 id="sessao">Roteiro de uma sessão de 1 hora</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tempo</th><th>O que fazer</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0–5 min</td><td>Dar play no cronômetro. Revisar a página de ontem: cobrir a coluna da direita e responder às perguntas.</td></tr>
+        <tr><td class="mono">5–30 min</td><td>Pomodoro 1: conteúdo novo no Trailhead, anotando no caderno no método Cornell.</td></tr>
+        <tr><td class="mono">30–35 min</td><td>Pausa, longe da tela.</td></tr>
+        <tr><td class="mono">35–55 min</td><td>Pomodoro 2: fazer no Playground o que estudou e completar o exercício prático.</td></tr>
+        <tr><td class="mono">55–60 min</td><td>Escrever as perguntas da esquerda e o resumo do rodapé. Anotar a tarefa da próxima sessão. Dar pause no cronômetro.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>Estude todos os dias, mesmo que seja só um pouco. A constância é o que te diferencia da maioria.</footer>
+</div>
+
+<div class="view" id="view-linkedin" role="tabpanel" aria-labelledby="tab-linkedin" hidden>
+
+<header class="plain-head">
+  <div class="eyebrow">LinkedIn e candidaturas</div>
+  <h1>Como ser encontrado e escolhido</h1>
+  <p class="muted">O recrutador não lê o seu perfil inteiro. Ele busca por palavras-chave, filtra e decide em poucos segundos se vale abrir. Esta aba mostra quando se candidatar e como montar um perfil que apareça nessas buscas e convença quem abrir.</p>
+  <div class="progress">
+    <div class="progress-row"><span>Checklist do perfil: <b id="li-pct" class="mono">0%</b> <span class="muted" id="li-count"></span></span></div>
+    <div class="bar"><span id="li-fill"></span></div>
+  </div>
+</header>
+
+<section aria-labelledby="quando">
+  <h2 id="quando">Quando começar a se candidatar</h2>
+  <div class="when-grid">
+    <div class="when-card">
+      <span class="chip">Agora · nov/2026</span>
+      <h3>Preparar o terreno</h3>
+      <p>Ainda não é hora de se candidatar a vagas. Mas já dá para arrumar a base do perfil, seguir as consultorias parceiras e se inscrever em bootcamps de formação assim que abrirem. Alguns aceitam iniciantes, sem certificação.</p>
+    </div>
+    <div class="when-card key">
+      <span class="chip now">A partir de mar/2027</span>
+      <h3>Começar as candidaturas</h3>
+      <p>Com a certificação Platform Administrator, você já está apto a disputar vagas de admin júnior, analista Salesforce e consultor júnior. Comece aqui, mesmo sem se sentir pronto. Os primeiros processos também servem de treino.</p>
+    </div>
+    <div class="when-card">
+      <span class="chip">jun/2027 em diante</span>
+      <h3>Candidato competitivo</h3>
+      <p>Com Admin, Agentforce Specialist, App Builder e 2 projetos publicados, você sai da massa de "só certificados". É nessa fase que o plano espera a primeira vaga.</p>
+    </div>
+  </div>
+  <div class="tip"><b>Resposta direta:</b> você estará apto ao terminar a fase 2 da rota (prova de Admin, em fevereiro de 2027), e o ideal é começar a se candidatar logo em março. Não espere terminar a fase 3. As candidaturas e o estudo andam juntos.</div>
+</section>
+
+<section aria-labelledby="busca">
+  <h2 id="busca">Como o recrutador te encontra</h2>
+  <div class="method">
+    <p>A busca do LinkedIn funciona por palavras-chave. Se o termo que o recrutador digita não está no seu perfil, você não aparece, por mais qualificado que seja. Os campos pesam mais ou menos nesta ordem:</p>
+    <ol class="rank">
+      <li><b>Título</b> (headline), o campo de maior peso</li>
+      <li><b>Cargo atual</b> na experiência</li>
+      <li><b>Sobre</b>: as primeiras linhas aparecem na prévia da busca</li>
+      <li><b>Descrições das experiências</b></li>
+      <li><b>Competências</b></li>
+      <li><b>Formação e certificações</b></li>
+    </ol>
+    <p>Além das palavras-chave, a ferramenta dos recrutadores filtra por localização, idioma, anos de experiência e disponibilidade ("Open to Work"). Também favorece perfis completos, com atividade recente e mais próximos na rede de conexões.</p>
+  </div>
+</section>
+
+<section aria-labelledby="perfil">
+  <h2 id="perfil">Seção por seção</h2>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Maior peso</span><h3>1. Título (headline)</h3></div>
+    <p>Você tem 220 caracteres. Use o cargo que você quer, as ferramentas e o seu diferencial. Nunca deixe só "Fundador" ou "CEO": ninguém busca por isso para uma vaga de admin.</p>
+    <p class="sub">Fórmula: Cargo-alvo | 2 ou 3 competências-chave | Diferencial de negócio</p>
+    <div class="example"><div class="c-label">Antes da certificação (até fev/2027)</div><p>Salesforce Admin em formação | Flow · Agentforce · CRM | Funil de vendas B2B, automações e agentes de IA</p></div>
+    <div class="example"><div class="c-label">Depois da certificação (mar/2027)</div><p>Salesforce Certified Platform Administrator | Agentforce | Flow · Relatórios · Automação | CRM e funil de vendas B2B</p></div>
+    <div class="example"><div class="c-label">Versão em inglês (fase 6, vagas internacionais)</div><p>Salesforce Administrator &amp; Developer | Agentforce | Apex · LWC · Flow | B2B Sales Process &amp; AI Agents</p></div>
+    <div class="tip"><b>Seja honesto:</b> só use "Certified" depois de passar na prova. Recrutadores verificam, e a Salesforce tem uma página pública de verificação de credenciais.</div>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Prévia da busca</span><h3>2. Sobre</h3></div>
+    <p>As primeiras 2 ou 3 linhas aparecem antes do "ver mais". Coloque ali quem você é, o que faz e as palavras-chave. Depois, conte a sua transição e mostre provas.</p>
+    <div class="example">
+      <div class="c-label">Modelo para adaptar (substitua os colchetes)</div>
+      <p>Salesforce Administrator com 10 anos de experiência em marketing digital, funis de vendas B2B e automações. Uno a configuração do Salesforce ao entendimento real de como uma área comercial funciona.</p>
+      <p>Depois de anos montando funis, CRMs e agentes de IA para empresas como fundador da Apex Commerce, decidi me especializar na plataforma Salesforce. Hoje construo [automações com Flow, relatórios e agentes com Agentforce] no meu ambiente de prática.</p>
+      <p>Projetos recentes:<br>• [Pipeline de vendas B2B com qualificação automática de leads: o que resolveu]<br>• [Agente Agentforce para atendimento: o que resolveu]</p>
+      <p>Certificações: [Platform Administrator · Agentforce Specialist · App Builder]</p>
+      <p>Competências: Salesforce Administration, Flow, Agentforce, Reports &amp; Dashboards, Security &amp; Sharing, Data Management, CRM, Lead Management.</p>
+      <p>Aberto a vagas de Salesforce Admin, Analista Salesforce e Consultor Salesforce, remotas ou em São José dos Campos e São Paulo.</p>
+    </div>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Sua vantagem</span><h3>3. Experiência</h3></div>
+    <p>Você não precisa esconder a Apex Commerce nem o marketing. Pelo contrário, descreva essa experiência com as palavras que o mundo Salesforce usa. Um recrutador de admin quer saber se você entende de processo comercial, dados e automação.</p>
+    <ul>
+      <li>Use termos que aparecem nas vagas: <i>CRM, funil de vendas, qualificação de leads, automação de processos, integração de sistemas, relatórios, dashboards, agentes de IA, levantamento de requisitos</i>.</li>
+      <li>Cada item deve ter um resultado, de preferência com número: "Automatizei o atendimento inicial com um agente de IA, reduzindo o tempo de resposta de [X] para [Y]". Use números reais, nunca inventados.</li>
+      <li>Ao conseguir a primeira vaga, use o cargo padrão no título ("Salesforce Administrator"), não um nome criativo. O título do cargo é buscável.</li>
+      <li>Coloque os projetos de portfólio em "Projetos", ligados à experiência ou à certificação.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Filtro</span><h3>4. Competências</h3></div>
+    <p>Os recrutadores filtram por competências. Adicione as que você realmente tem, e coloque as mais importantes no topo, porque só as primeiras aparecem em destaque.</p>
+    <div class="skills">
+      <span>Salesforce.com Administration</span><span>Salesforce Flow</span><span>Agentforce</span><span>Salesforce Reports &amp; Dashboards</span><span>Data Management</span><span>Security &amp; Sharing</span><span>CRM</span><span>Business Process Automation</span><span>Lead Management</span><span>Sales Pipeline</span><span>Requirements Gathering</span><span>Trailhead</span>
+    </div>
+    <p class="sub">Depois, adicione Apex, Lightning Web Components, SOQL e JavaScript conforme for aprendendo (fases 4 e 5). Peça a ex-colegas e clientes que validem as competências que conhecem de você.</p>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Prova</span><h3>5. Certificações, Trailhead e Destaques</h3></div>
+    <ul>
+      <li><b>Licenças e certificados:</b> cada certificação Salesforce, com o link de verificação.</li>
+      <li><b>Perfil do Trailhead:</b> deixe público, com foto, um resumo curto e o link do LinkedIn. Coloque o link do Trailhead na seção de contato e nos Destaques.</li>
+      <li><b>Superbadges:</b> são desafios práticos e mais difíceis do Trailhead. Valem mais que badges comuns. Faça pelo menos um antes de março de 2027.</li>
+      <li><b>Destaques (Featured):</b> fixe os 2 projetos com prints ou vídeo curto, o seu perfil do Trailhead e o melhor post que você escreveu.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Disponibilidade</span><h3>6. Open to Work</h3></div>
+    <p>Ativar o "Open to Work" coloca você na lista que os recrutadores filtram por pessoas disponíveis. A dúvida é se ele deve aparecer para todos (com a moldura verde na foto) ou só para recrutadores.</p>
+    <div class="tip"><b>No seu caso, use "Somente recrutadores".</b> Você tem uma empresa com clientes ativos, e a moldura verde pública pode passar a impressão de que a Apex Commerce está encerrando. A opção privada te coloca no mesmo filtro dos recrutadores, sem expor isso.</div>
+    <ul>
+      <li><b>Cargos:</b> Salesforce Administrator, Analista Salesforce, Consultor Salesforce, CRM Analyst, Salesforce Consultant.</li>
+      <li><b>Local:</b> Remoto (Brasil), São José dos Campos e São Paulo. Na fase 6, inclua países e "Remote" internacional.</li>
+      <li><b>Tipo:</b> CLT e PJ.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Primeira impressão</span><h3>7. Foto, banner e URL</h3></div>
+    <ul>
+      <li><b>Foto:</b> rosto bem iluminado, fundo neutro, roupa de trabalho e sorriso leve. Uma foto ruim derruba o perfil antes de alguém ler qualquer coisa.</li>
+      <li><b>Banner:</b> use o espaço para reforçar a proposta, como "Salesforce Admin · Agentforce · CRM B2B", em vez de uma paisagem.</li>
+      <li><b>URL personalizada:</b> linkedin.com/in/douglas-soares-salesforce ou algo parecido. Fica limpo no currículo.</li>
+    </ul>
+  </div>
+
+  <div class="method">
+    <div class="mhead"><span class="chip">Internacional</span><h3>8. Perfil em inglês</h3></div>
+    <p>O LinkedIn permite criar uma segunda versão do perfil em outro idioma. Monte a versão em inglês a partir da fase 5. Recrutadores de fora veem automaticamente a versão em inglês, e quem busca no Brasil vê a em português.</p>
+  </div>
+</section>
+
+<section aria-labelledby="atividade">
+  <h2 id="atividade">Atividade: o que faz você aparecer</h2>
+  <div class="two-col">
+    <div class="method">
+      <h3>Rotina semanal (15 a 30 minutos)</h3>
+      <ul>
+        <li>Comentar com conteúdo, e não só "parabéns", em 3 a 5 posts de profissionais Salesforce.</li>
+        <li>Conectar com 5 pessoas da área: recrutadores de consultorias parceiras, admins e consultores. Mande sempre uma mensagem curta e pessoal.</li>
+        <li>Fazer alguma pequena atualização no perfil. Perfis ativos aparecem mais.</li>
+      </ul>
+    </div>
+    <div class="method">
+      <h3>1 post por mês</h3>
+      <ul>
+        <li>O que você aprendeu, explicado de forma simples (use a técnica de Feynman da aba de estudo).</li>
+        <li>Um projeto construído, com prints: o problema, o que fez e o resultado.</li>
+        <li>Uma certificação conquistada e o que mais te ajudou a passar.</li>
+        <li>Um paralelo entre marketing B2B e Salesforce. É um ângulo que só você tem.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tip"><b>Mostre o seu trabalho:</b> a própria comunidade Salesforce insiste que quem é contratado é quem documenta e compartilha o que constrói, não quem só acumula badges.</div>
+</section>
+
+<section aria-labelledby="erros">
+  <h2 id="erros">Erros que travam iniciantes</h2>
+  <ul class="rules">
+    <li><b>Se candidatar só pelo LinkedIn.</b> Use também os sites das consultorias, os grupos da comunidade, indicações e eventos presenciais. Vagas locais por indicação são as mais fáceis de conseguir.</li>
+    <li><b>Não ser específico.</b> "Quero qualquer vaga de TI" não convence. "Admin Salesforce para área comercial B2B" convence.</li>
+    <li><b>Não vender a experiência anterior.</b> Os seus 10 anos de marketing e negócio são o seu diferencial. Não comece do zero no perfil.</li>
+    <li><b>Ter só certificação, sem prática.</b> Hoje os recrutadores sabem que certificação sozinha não garante experiência. Projetos reais mostram que você consegue fazer.</li>
+    <li><b>Perfil e currículo diferentes.</b> Recrutadores comparam os dois. Datas, cargos e certificações precisam ser iguais.</li>
+    <li><b>Limitar-se ao título "Admin".</b> Também se candidate a analista de CRM, analista Salesforce, consultor júnior e suporte Salesforce.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="check">
+  <h2 id="check">Checklist do perfil</h2>
+  <div class="method">
+    <ul class="tasks" id="li-tasks">
+      <li><input type="checkbox" id="li-1"><label for="li-1"><span>Foto profissional e banner com a proposta</span></label></li>
+      <li><input type="checkbox" id="li-2"><label for="li-2"><span>URL personalizada</span></label></li>
+      <li><input type="checkbox" id="li-3"><label for="li-3"><span>Título com cargo-alvo e palavras-chave (versão "em formação")</span></label></li>
+      <li><input type="checkbox" id="li-4"><label for="li-4"><span>Sobre reescrito com o modelo desta aba</span></label></li>
+      <li><input type="checkbox" id="li-5"><label for="li-5"><span>Experiência da Apex Commerce reescrita com termos de CRM e automação</span></label></li>
+      <li><input type="checkbox" id="li-6"><label for="li-6"><span>Competências cadastradas, com as 5 principais no topo</span></label></li>
+      <li><input type="checkbox" id="li-7"><label for="li-7"><span>Perfil do Trailhead público e com link no LinkedIn</span></label></li>
+      <li><input type="checkbox" id="li-8"><label for="li-8"><span>Seguir 10 consultorias parceiras da Salesforce e ativar alertas de vaga</span></label></li>
+      <li><input type="checkbox" id="li-9"><label for="li-9"><span>Primeiro post contando que começou a estudar Salesforce</span></label></li>
+      <li><input type="checkbox" id="li-10"><label for="li-10"><span>Primeira superbadge concluída e publicada</span></label></li>
+      <li><input type="checkbox" id="li-11"><label for="li-11"><span>Certificação Platform Administrator adicionada, com o link de verificação</span></label></li>
+      <li><input type="checkbox" id="li-12"><label for="li-12"><span>Título atualizado para a versão "Certified"</span></label></li>
+      <li><input type="checkbox" id="li-13"><label for="li-13"><span>Open to Work ativado como "Somente recrutadores"</span></label></li>
+      <li><input type="checkbox" id="li-14"><label for="li-14"><span>Projetos de portfólio fixados nos Destaques</span></label></li>
+      <li><input type="checkbox" id="li-15"><label for="li-15"><span>Currículo alinhado ao LinkedIn (mesmas datas, cargos e certificações)</span></label></li>
+      <li><input type="checkbox" id="li-16"><label for="li-16"><span>Perfil em inglês criado (fase 5)</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="fontes">
+  <h2 id="fontes">Fontes</h2>
+  <ul class="links">
+    <li><a href="https://www.salesforceben.com/salesforce-certifications-arent-enough-anymore-heres-how-you-can-stand-out/">SF Ben: certificações não bastam mais</a><small>Como se destacar como admin iniciante.</small></li>
+    <li><a href="https://salesforceben.com/key-advice-for-getting-an-entry-level-salesforce-job-in-2025">SF Ben: conselhos para a primeira vaga</a><small>Erros comuns de iniciantes.</small></li>
+    <li><a href="https://www.salesforce.com/blog/what-sets-you-apart-from-other-candidates/">Salesforce: o que te diferencia</a><small>Comunidade, portfólio e visibilidade.</small></li>
+    <li><a href="https://trailhead.salesforce.com/content/learn/modules/career-development-planning/land-your-next-opportunity">Trailhead: Land Your Next Opportunity</a><small>Módulo oficial sobre perfil e candidatura.</small></li>
+    <li><a href="https://blog.theinterviewguys.com/?p=11158">LinkedIn SEO 2026</a><small>Peso de cada seção na busca.</small></li>
+    <li><a href="https://onjob.io/blog/linkedin-tips-to-get-noticed-by-recruiters-2026/">Dicas de visibilidade 2026</a><small>Open to Work e busca dos recrutadores.</small></li>
+  </ul>
+</section>
+
+<footer>O seu perfil é a sua vitrine. Atualize-o a cada certificação ou projeto concluído.</footer>
+</div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg width="44" height="44" viewBox="0 0 48 48" aria-hidden="true">
+    <circle class="check-circle" cx="24" cy="24" r="21" fill="none" stroke-width="3.5"/>
+    <path class="check-mark" d="M14 25 l7 7 l13 -15" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div><div class="t1" id="toast-t1">Parabéns!</div><div class="t2" id="toast-t2"></div></div>
+</div>
+
+<script>
+(function(){
+  /* ---------- armazenamento seguro ---------- */
+  function load(k, fallback){ try { var v = JSON.parse(localStorage.getItem(k)); return v || fallback; } catch(e){ return fallback; } }
+  function store(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+
+  function pad(n){ return (n < 10 ? "0" : "") + n; }
+  var now = new Date();
+  var todayKey = now.getFullYear() + "-" + pad(now.getMonth()+1) + "-" + pad(now.getDate());
+  var monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  var weekKey = monday.getFullYear() + "-" + pad(monday.getMonth()+1) + "-" + pad(monday.getDate());
+  var monthKey = now.getFullYear() + "-" + pad(now.getMonth()+1);
+
+  /* ---------- parabéns: toast + confete ---------- */
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var toast = document.getElementById("toast"), toastTimer = null;
+  var praises = ["Mais um passo na rota.", "Constância é o que te diferencia.", "Feito! Siga para o próximo.", "Isso é o que a maioria não faz.", "Boa! Você está construindo a sua vaga."];
+  function celebrate(title, text, big){
+    document.getElementById("toast-t1").textContent = title;
+    document.getElementById("toast-t2").textContent = text || praises[Math.floor(Math.random()*praises.length)];
+    toast.classList.remove("show","big");
+    void toast.offsetWidth;
+    if (big) toast.classList.add("big");
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, big ? 4200 : 2600);
+    if (!reduce) confetti(big ? 220 : 90);
+  }
+
+  var canvas = document.getElementById("confetti"), ctx = canvas.getContext && canvas.getContext("2d");
+  var parts = [], running = false;
+  var colors = ["#0176d3","#032d60","#2e844a","#fe9339","#1b96ff","#ffffff"];
+  function confetti(n){
+    if (!ctx) return;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    for (var i = 0; i < n; i++){
+      parts.push({
+        x: canvas.width/2 + (Math.random()-.5)*120, y: canvas.height - 90,
+        vx: (Math.random()-.5)*13, vy: -(Math.random()*13 + 9),
+        w: 6 + Math.random()*6, h: 4 + Math.random()*5,
+        r: Math.random()*Math.PI, vr: (Math.random()-.5)*.3,
+        c: colors[i % colors.length], life: 0
+      });
+    }
+    if (!running){ running = true; requestAnimationFrame(tick); }
+  }
+  function tick(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    parts = parts.filter(function(p){ return p.life < 160 && p.y < canvas.height + 40; });
+    parts.forEach(function(p){
+      p.life++; p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.globalAlpha = Math.max(0, 1 - p.life/160);
+      ctx.fillStyle = p.c; ctx.strokeStyle = "rgba(0,0,0,.08)";
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if (parts.length){ requestAnimationFrame(tick); } else { running = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+
+  /* ---------- tarefas das fases ---------- */
+  var KEY = "rota-sf-douglas-v1";
+  var saved = load(KEY, {});
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.phase .tasks input[type="checkbox"]'));
+
+  function renderPhases(){
+    var done = 0;
+    boxes.forEach(function(b){
+      b.checked = !!saved[b.id];
+      b.closest("li").classList.toggle("checked", b.checked);
+      if (b.checked) done++;
+    });
+    var pct = boxes.length ? Math.round(done / boxes.length * 100) : 0;
+    document.getElementById("pct").textContent = pct + "%";
+    document.getElementById("count").textContent = "(" + done + " de " + boxes.length + " tarefas)";
+    document.getElementById("barfill").style.width = pct + "%";
+    document.querySelectorAll(".phase").forEach(function(ph){
+      var list = ph.querySelectorAll('.tasks input');
+      var d = 0;
+      list.forEach(function(i){ if (i.checked) d++; });
+      var c = ph.querySelector("[data-count]");
+      if (c) c.textContent = d + " de " + list.length + " concluídas";
+    });
+    return done;
+  }
+  boxes.forEach(function(b){
+    b.addEventListener("change", function(){
+      saved[b.id] = b.checked;
+      store(KEY, saved);
+      var done = renderPhases();
+      if (!b.checked) return;
+      var ph = b.closest(".phase");
+      var all = ph.querySelectorAll(".tasks input"), allDone = true;
+      all.forEach(function(i){ if (!i.checked) allDone = false; });
+      if (done === boxes.length) celebrate("Rota concluída!", "Você chegou ao fim do plano. Hora de traçar a próxima.", true);
+      else if (allDone) celebrate("Fase concluída!", ph.querySelector("h3").textContent + ": etapa vencida.", true);
+      else celebrate("Parabéns!", b.closest("li").querySelector("label > span").textContent);
+    });
+  });
+
+  /* ---------- metas diárias e semanais ---------- */
+  function periodList(listId, statusId, storeKey, period, label){
+    var state = load(storeKey, {});
+    if (state.period !== period) state = { period: period, ids: {} };
+    var inputs = Array.prototype.slice.call(document.querySelectorAll("#" + listId + " input"));
+    function render(){
+      var d = 0;
+      inputs.forEach(function(i){
+        i.checked = !!state.ids[i.id];
+        i.closest("li").classList.toggle("checked", i.checked);
+        if (i.checked) d++;
+      });
+      document.getElementById(statusId).textContent = d + " de " + inputs.length + " " + label;
+      return d;
+    }
+    inputs.forEach(function(i){
+      i.addEventListener("change", function(){
+        state.ids[i.id] = i.checked; store(storeKey, state);
+        var d = render();
+        if (!i.checked) return;
+        if (d === inputs.length) celebrate(listId === "daily" ? "Dia completo!" : "Semana completa!", "Todas as metas cumpridas. Constância é o seu diferencial.", true);
+        else celebrate("Parabéns!", i.closest("li").querySelector("label > span").textContent);
+      });
+    });
+    render();
+  }
+  periodList("daily", "daily-status", "rota-sf-daily", todayKey, "cumpridas hoje");
+  periodList("weekly", "weekly-status", "rota-sf-weekly", weekKey, "cumpridas nesta semana");
+
+  /* ---------- metas mensais ---------- */
+  var M = [
+    ["2026-11","Criar a conta, conferir o nome e iniciar a Admin Beginner"],
+    ["2026-12","Concluir a Admin Beginner (até 15/12), passar pelo ponto de decisão (21/12) e iniciar a Admin Intermediate"],
+    ["2027-01","Admin Intermediate com foco em Flow + primeiras trilhas de Agentforce"],
+    ["2027-02","Trailmix oficial, 80% ou mais nos simulados e prova Platform Administrator"],
+    ["2027-03","LinkedIn atualizado + post, entrar num Trailblazer Group, começar as candidaturas e o estudo de Agentforce Specialist"],
+    ["2027-04","Prova Agentforce Specialist + iniciar o projeto 1 (pipeline B2B)"],
+    ["2027-05","Publicar o projeto 1, estudar para App Builder e começar o CS50 (semanas 0 e 1)"],
+    ["2027-06","Prova App Builder, publicar o projeto 2 (agente), começar JavaScript e passar pelo ponto de decisão (30/06)"],
+    ["2027-07","Estar em vaga, bootcamp ou freelance + iniciar a Developer Beginner"],
+    ["2027-08","Apex básico: variáveis, classes e métodos"],
+    ["2027-09","SOQL + começar a conversação em inglês semanal"],
+    ["2027-10","Triggers em Apex + criar o documento de conquistas"],
+    ["2027-11","Concluir a parte 1 do JavaScript.info + exercícios de Apex"],
+    ["2027-12","Primeiro código Apex no portfólio + revisão do ano"],
+    ["2028-01","Iniciar a trilha Developer Intermediate"],
+    ["2028-02","Classes de teste em Apex"],
+    ["2028-03","Fundamentos de Lightning Web Components (LWC)"],
+    ["2028-04","Integrar LWC com Apex"],
+    ["2028-05","Iniciar o projeto 3 (integração com API externa)"],
+    ["2028-06","Simulados de Platform Developer com 80% ou mais"],
+    ["2028-07","Prova Platform Developer"],
+    ["2028-08","Publicar o projeto 3 no GitHub com README em inglês"],
+    ["2028-09","Candidaturas a dev júnior ou cargo híbrido de admin e dev"],
+    ["2028-10","LinkedIn e currículo totalmente em inglês"],
+    ["2028-11","EF SET com resultado B2 ou superior"],
+    ["2028-12","Atuando como dev júnior ou híbrido + revisão do ano"],
+    ["2029-01","Treinar entrevistas técnicas em inglês"],
+    ["2029-02","Candidaturas remotas para empresas de fora (América Latina)"],
+    ["2029-03","Iniciar o estudo de Data Architect"],
+    ["2029-04","Primeiras entrevistas internacionais"],
+    ["2029-05","Um case do portfólio escrito em inglês"],
+    ["2029-06","Revisar o caminho presencial: cidadania portuguesa ou visto"],
+    ["2029-07","Data Architect: modelagem de dados"],
+    ["2029-08","Data Architect: grandes volumes de dados"],
+    ["2029-09","Meta: primeiro contrato em dólar ou euro"],
+    ["2029-10","Simulados de Data Architect"],
+    ["2029-11","Prova Data Architect"],
+    ["2029-12","Revisão do ano"],
+    ["2030-01","Iniciar o estudo de Sharing and Visibility Architect"],
+    ["2030-02","Sharing and Visibility: modelo de compartilhamento"],
+    ["2030-03","Sharing and Visibility: segurança programática"],
+    ["2030-04","Simulados de Sharing and Visibility"],
+    ["2030-05","Prova Sharing and Visibility Architect"],
+    ["2030-06","Receber a credencial Application Architect"],
+    ["2030-07","Negociar promoção para pleno forte ou sênior"],
+    ["2030-08","Mentorar um iniciante ou publicar conteúdo técnico"],
+    ["2030-09","Montar o plano rumo a Solution ou Technical Architect"],
+    ["2030-10","Avaliar a mudança presencial para o exterior"],
+    ["2030-11","Definir as metas de 2031 e 2032"],
+    ["2030-12","Revisão final do projeto e celebração"]
+  ];
+  var MKEY = "rota-sf-monthly";
+  var msaved = load(MKEY, {});
+  var monthNames = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  var wrap = document.getElementById("months");
+  var years = {};
+  M.forEach(function(m){ var y = m[0].slice(0,4); (years[y] = years[y] || []).push(m); });
+  Object.keys(years).forEach(function(y){
+    var box = document.createElement("div"); box.className = "year";
+    var head = document.createElement("div"); head.className = "year-head";
+    var h = document.createElement("h3"); h.textContent = y;
+    var cnt = document.createElement("span"); cnt.className = "sub"; cnt.setAttribute("data-year", y);
+    head.appendChild(h); head.appendChild(cnt); box.appendChild(head);
+    var ul = document.createElement("ul"); ul.className = "month-list";
+    years[y].forEach(function(m){
+      var id = "m-" + m[0];
+      var li = document.createElement("li");
+      if (m[0] === monthKey) li.className = "current";
+      var input = document.createElement("input"); input.type = "checkbox"; input.id = id;
+      var mon = document.createElement("span"); mon.className = "m"; mon.textContent = monthNames[+m[0].slice(5)-1] + "/" + y.slice(2);
+      var label = document.createElement("label"); label.htmlFor = id;
+      var span = document.createElement("span"); span.textContent = m[1]; label.appendChild(span);
+      if (m[0] === monthKey){ var chip = document.createElement("span"); chip.className = "chip now"; chip.textContent = "Este mês"; chip.style.marginLeft = "8px"; label.appendChild(chip); }
+      li.appendChild(input); li.appendChild(mon); li.appendChild(label);
+      ul.appendChild(li);
+    });
+    box.appendChild(ul); wrap.appendChild(box);
+  });
+  var minputs = Array.prototype.slice.call(wrap.querySelectorAll("input"));
+  function renderMonths(){
+    var d = 0, perYear = {};
+    minputs.forEach(function(i){
+      i.checked = !!msaved[i.id];
+      i.closest("li").classList.toggle("checked", i.checked);
+      var y = i.id.slice(2,6); perYear[y] = perYear[y] || [0,0]; perYear[y][1]++;
+      if (i.checked){ d++; perYear[y][0]++; }
+    });
+    document.getElementById("monthly-status").textContent = d + " de " + minputs.length + " meses concluídos";
+    Object.keys(perYear).forEach(function(y){
+      var el = wrap.querySelector('[data-year="' + y + '"]');
+      if (el) el.textContent = perYear[y][0] + " de " + perYear[y][1] + " meses";
+    });
+    return perYear;
+  }
+  minputs.forEach(function(i){
+    i.addEventListener("change", function(){
+      msaved[i.id] = i.checked; store(MKEY, msaved);
+      var perYear = renderMonths();
+      if (!i.checked) return;
+      var y = i.id.slice(2,6);
+      if (perYear[y][0] === perYear[y][1]) celebrate("Ano de " + y + " concluído!", "Todas as metas mensais do ano foram cumpridas.", true);
+      else celebrate("Mês concluído!", i.closest("li").querySelector("label > span").textContent, true);
+    });
+  });
+  renderMonths();
+
+  /* ---------- desmarcar tudo ---------- */
+  var resetBtn = document.getElementById("reset");
+  var armed = false;
+  resetBtn.addEventListener("click", function(){
+    if (!armed) {
+      armed = true;
+      resetBtn.textContent = "Clique de novo para confirmar";
+      setTimeout(function(){ armed = false; resetBtn.textContent = "Desmarcar tudo"; }, 3000);
+      return;
+    }
+    saved = {}; store(KEY, saved); renderPhases();
+    msaved = {}; store(MKEY, msaved); renderMonths();
+    armed = false; resetBtn.textContent = "Desmarcar tudo";
+  });
+
+  renderPhases();
+
+  /* ---------- abas ---------- */
+  var views = { rota: document.getElementById("view-rota"), estudo: document.getElementById("view-estudo"), linkedin: document.getElementById("view-linkedin") };
+  function route(){
+    var h = (location.hash || "").replace("#","");
+    var active = views[h] ? h : "rota";
+    if (h && !views[h]) {
+      var target = document.getElementById(h);
+      Object.keys(views).forEach(function(k){ if (target && views[k].contains(target)) active = k; });
+    }
+    Object.keys(views).forEach(function(k){
+      views[k].hidden = k !== active;
+      var t = document.getElementById("tab-" + k);
+      t.setAttribute("aria-selected", k === active ? "true" : "false");
+    });
+    if (active === "estudo") renderTimer(true);
+  }
+  window.addEventListener("hashchange", route);
+
+  /* ---------- cronômetro contínuo ---------- */
+  var TKEY = "rota-sf-timer";
+  var T = load(TKEY, { days: {}, runStart: null, pomo: false });
+  if (!T.days) T.days = {};
+  function dayKey(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function addSpan(start, end){
+    var s = start;
+    while (s < end){
+      var d = new Date(s);
+      var next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+      var stop = Math.min(next, end);
+      var k = dayKey(d);
+      T.days[k] = (T.days[k] || 0) + (stop - s);
+      s = stop;
+    }
+  }
+  function totalsWithRunning(){
+    var copy = {}; Object.keys(T.days).forEach(function(k){ copy[k] = T.days[k]; });
+    if (T.runStart){
+      var s = T.runStart, end = Date.now();
+      while (s < end){
+        var d = new Date(s);
+        var next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+        var stop = Math.min(next, end), k = dayKey(d);
+        copy[k] = (copy[k] || 0) + (stop - s); s = stop;
+      }
+    }
+    return copy;
+  }
+  function hms(ms){ var s = Math.floor(ms/1000); return pad(Math.floor(s/3600)) + ":" + pad(Math.floor(s%3600/60)) + ":" + pad(s%60); }
+  function hm(ms){ var m = Math.floor(ms/60000); return Math.floor(m/60) + "h " + pad(m%60) + "min"; }
+
+  var playBtn = document.getElementById("play");
+  var pomoBox = document.getElementById("pomo");
+  pomoBox.checked = !!T.pomo;
+  pomoBox.addEventListener("change", function(){ T.pomo = pomoBox.checked; store(TKEY, T); });
+  var lastPomoBlock = 0, goalCelebrated = null, baseTitle = document.title;
+
+  function renderTimer(full){
+    var days = totalsWithRunning();
+    var nowD = new Date(), tk = dayKey(nowD);
+    var today = days[tk] || 0;
+    document.getElementById("clock-today").textContent = hms(today);
+    var gp = Math.min(100, Math.round(today / 3600000 * 100));
+    document.getElementById("goal-pct").textContent = gp + "%";
+    document.getElementById("goal-fill").style.width = gp + "%";
+
+    var running = !!T.runStart;
+    playBtn.classList.toggle("on", running);
+    playBtn.setAttribute("aria-pressed", running ? "true" : "false");
+    document.getElementById("play-label").textContent = running ? "Pause" : "Play";
+    document.getElementById("ico-play").hidden = running;
+    document.getElementById("ico-pause").hidden = !running;
+    var chip = document.getElementById("run-chip");
+    chip.textContent = running ? "Estudando" : "Pausado";
+    chip.classList.toggle("running", running);
+    document.title = running ? "▶ " + hms(today) + " · " + baseTitle : baseTitle;
+
+    if (running && today >= 3600000 && goalCelebrated !== tk){
+      goalCelebrated = tk;
+      celebrate("Meta do dia batida!", "1 hora de estudo hoje. Amanhã tem mais.", true);
+    }
+    if (running && T.pomo){
+      var block = Math.floor((Date.now() - T.runStart) / (25*60000));
+      if (block > lastPomoBlock){
+        lastPomoBlock = block;
+        celebrate("Hora da pausa!", "25 minutos de foco concluídos. Pause, descanse 5 minutos e volte.", false);
+      }
+    }
+    if (!full) return;
+
+    var mon = new Date(nowD); mon.setDate(nowD.getDate() - ((nowD.getDay() + 6) % 7)); mon.setHours(0,0,0,0);
+    var week = 0, month = 0, total = 0, mk = tk.slice(0,7);
+    Object.keys(days).forEach(function(k){
+      var v = days[k]; total += v;
+      if (k.slice(0,7) === mk) month += v;
+      var p = k.split("-"), dd = new Date(+p[0], +p[1]-1, +p[2]);
+      if (dd >= mon) week += v;
+    });
+    document.getElementById("s-week").textContent = hm(week);
+    document.getElementById("s-month").textContent = hm(month);
+    document.getElementById("s-total").textContent = hm(total);
+
+    var streak = 0, cur = new Date(nowD);
+    if ((days[tk] || 0) < 3600000) cur.setDate(cur.getDate() - 1);
+    while ((days[dayKey(cur)] || 0) >= 3600000){ streak++; cur.setDate(cur.getDate() - 1); }
+    document.getElementById("s-streak").textContent = streak + (streak === 1 ? " dia" : " dias");
+
+    var chart = document.getElementById("chart");
+    var list = [], maxH = 2;
+    for (var i = 13; i >= 0; i--){
+      var d = new Date(nowD); d.setDate(nowD.getDate() - i);
+      var v = days[dayKey(d)] || 0; list.push([d, v]);
+      maxH = Math.max(maxH, v / 3600000);
+    }
+    maxH = Math.ceil(maxH);
+    var wd = ["dom","seg","ter","qua","qui","sex","sáb"];
+    var html = "";
+    list.forEach(function(it){
+      var h = it[1] / 3600000, pct = h / maxH * 100;
+      var cls = it[1] >= 3600000 ? "ok" : (it[1] > 0 ? "low" : "");
+      var lbl = it[1] > 0 ? (h >= 1 ? h.toFixed(1).replace(".", ",") + "h" : Math.round(it[1]/60000) + "m") : "";
+      html += '<div class="col"><span class="lbl">' + lbl + '</span><div class="bar-v ' + cls + '" style="height:' + pct + '%"></div></div>';
+    });
+    html += '<div class="goal-line" style="bottom:' + (1 / maxH * (200 - 18)) + 'px"></div>';
+    chart.innerHTML = html;
+    var daysRow = chart.nextElementSibling;
+    if (!daysRow || !daysRow.classList.contains("days")){
+      daysRow = document.createElement("div"); daysRow.className = "days";
+      chart.parentNode.insertBefore(daysRow, chart.nextSibling);
+    }
+    daysRow.innerHTML = list.map(function(it, idx){
+      return '<span class="' + (idx === 13 ? "today" : "") + '">' + (idx === 13 ? "hoje" : wd[it[0].getDay()] + "<br>" + it[0].getDate()) + "</span>";
+    }).join("");
+  }
+
+  playBtn.addEventListener("click", function(){
+    if (T.runStart){
+      addSpan(T.runStart, Date.now());
+      T.runStart = null;
+    } else {
+      T.runStart = Date.now();
+      lastPomoBlock = 0;
+    }
+    store(TKEY, T);
+    renderTimer(true);
+  });
+
+  var tReset = document.getElementById("timer-reset"), tArmed = false;
+  tReset.addEventListener("click", function(){
+    if (!tArmed){
+      tArmed = true; tReset.textContent = "Clique de novo para apagar todo o histórico";
+      setTimeout(function(){ tArmed = false; tReset.textContent = "Zerar cronômetro"; }, 3000);
+      return;
+    }
+    T = { days: {}, runStart: null, pomo: pomoBox.checked }; store(TKEY, T);
+    tArmed = false; tReset.textContent = "Zerar cronômetro";
+    renderTimer(true);
+  });
+
+  /* ---------- checklist do LinkedIn ---------- */
+  var LKEY = "rota-sf-linkedin";
+  var lsaved = load(LKEY, {});
+  var linputs = Array.prototype.slice.call(document.querySelectorAll("#li-tasks input"));
+  function renderLi(){
+    var d = 0;
+    linputs.forEach(function(i){
+      i.checked = !!lsaved[i.id];
+      i.closest("li").classList.toggle("checked", i.checked);
+      if (i.checked) d++;
+    });
+    var pct = linputs.length ? Math.round(d / linputs.length * 100) : 0;
+    document.getElementById("li-pct").textContent = pct + "%";
+    document.getElementById("li-count").textContent = "(" + d + " de " + linputs.length + ")";
+    document.getElementById("li-fill").style.width = pct + "%";
+    return d;
+  }
+  linputs.forEach(function(i){
+    i.addEventListener("change", function(){
+      lsaved[i.id] = i.checked; store(LKEY, lsaved);
+      var d = renderLi();
+      if (!i.checked) return;
+      if (d === linputs.length) celebrate("Perfil completo!", "Seu LinkedIn está pronto para os recrutadores.", true);
+      else celebrate("Parabéns!", i.closest("li").querySelector("label > span").textContent);
+    });
+  });
+  renderLi();
+
+  var tickN = 0;
+  setInterval(function(){ tickN++; renderTimer(tickN % 30 === 0); }, 1000);
+  route();
+  renderTimer(true);
+})();
+</script>
+</body>
+</html>
